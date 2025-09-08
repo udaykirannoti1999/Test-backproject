@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -e
 
 AWS_REGION="ap-south-2"   
 BACKUP_VAULT="rds-dr-vault"
@@ -10,7 +10,7 @@ SECURITY_GROUP_IDS="sg-0dbe4ffceac1371e2"
 ECS_CLUSTER="daister-services-cluster"
 ECS_SERVICE="back-updashboard"
 IAM_ROLE_ARN="arn:aws:iam::585008046531:role/service-role/AWSBackupDefaultServiceRole"
-SECRET_NAME="back-service"   
+SECRET_NAME="back-service"
 
 # Function: Get latest recovery point
 get_latest_recovery_point() {
@@ -19,8 +19,7 @@ get_latest_recovery_point() {
     --backup-vault-name "$BACKUP_VAULT" \
     --region "$AWS_REGION" \
     --query "RecoveryPoints | sort_by(@, &CreationDate)[-1].RecoveryPointArn" \
-    --output text \
-    --no-paginate)
+    --output text)
   
   if [[ -z "$LATEST_RECOVERY_POINT" || "$LATEST_RECOVERY_POINT" == "None" ]]; then
     echo "❌ No recovery points found in vault: $BACKUP_VAULT"
@@ -62,24 +61,24 @@ check_subnet_group() {
 
 # Function: Start restore job
 start_restore_job() {
-    echo "Starting restore job..."
-    
-    RESTORE_JOB_ID=$(aws backup start-restore-job \
-        --recovery-point-arn "$LATEST_RECOVERY_POINT" \
-        --metadata "{
-            \"DBInstanceIdentifier\":\"$DB_INSTANCE_IDENTIFIER\",
-            \"DBInstanceClass\":\"db.t4g.micro\",
-            \"DBSubnetGroupName\":\"$DB_SUBNET_GROUP\",
-            \"VpcSecurityGroupIds\":[\"$SECURITY_GROUP_IDS\"],
-            \"Port\":\"$DB_PORT\"
-        }" \
-        --iam-role-arn "$IAM_ROLE_ARN" \
-        --resource-type RDS \
-        --region "$AWS_REGION" \
-        --query RestoreJobId \
-        --output text)
+  echo "Starting restore job..."
+  
+  RESTORE_JOB_ID=$(aws backup start-restore-job \
+    --recovery-point-arn "$LATEST_RECOVERY_POINT" \
+    --metadata "{
+      \"DBInstanceIdentifier\":\"$DB_INSTANCE_IDENTIFIER\",
+      \"DBInstanceClass\":\"db.t4g.micro\",
+      \"DBSubnetGroupName\":\"$DB_SUBNET_GROUP\",
+      \"VpcSecurityGroupIds\":\"$SECURITY_GROUP_IDS\",
+      \"Port\":\"$DB_PORT\"
+    }" \
+    --iam-role-arn "$IAM_ROLE_ARN" \
+    --resource-type RDS \
+    --region "$AWS_REGION" \
+    --query RestoreJobId \
+    --output text)
 
-    echo "✅ Restore Job ID: $RESTORE_JOB_ID"
+  echo "✅ Restore Job ID: $RESTORE_JOB_ID"
 }
 
 # Function: Wait for restore job
@@ -90,7 +89,7 @@ wait_for_restore() {
       --region "$AWS_REGION" \
       --query "RestoreJobs[?RestoreJobId=='$RESTORE_JOB_ID'].Status" \
       --output text)
-    
+
     echo "   Current Restore Status: $STATUS"
 
     if [[ "$STATUS" == "COMPLETED" ]]; then
@@ -104,7 +103,7 @@ wait_for_restore() {
         --output text
       exit 1
     fi
-    sleep 60
+    sleep 30
   done
 }
 
@@ -133,11 +132,6 @@ update_secret() {
     --query SecretString \
     --output text)
 
-  if [[ -z "$current_secret" ]]; then
-    echo "❌ Secret $SECRET_NAME is empty or not found."
-    exit 1
-  fi
-
   updated_secret=$(echo "$current_secret" | jq --arg host "$DB_ENDPOINT" '.host = $host')
 
   echo "Updating secret '$SECRET_NAME' with new host..."
@@ -145,7 +139,7 @@ update_secret() {
     --secret-id "$SECRET_NAME" \
     --region "$AWS_REGION" \
     --secret-string "$updated_secret"
-
+  
   echo "✅ Secret updated successfully"
 }
 
