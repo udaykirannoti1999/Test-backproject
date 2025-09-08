@@ -4,9 +4,11 @@ pipeline {
         stage('Restore DB') {
             steps {
                 sh """
-                ./restore_db.sh 
+                chmod +x restore_db.sh
+                ./restore_db.sh
                 """
             }
         }
     }
 }
+
