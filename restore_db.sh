@@ -7,11 +7,12 @@ BACKUP_VAULT="rds-dr-vault"
 DB_INSTANCE_IDENTIFIER="back-upstore"
 DB_PORT="3306"
 DB_SUBNET_GROUP="default-vpc-051642d98eff4a857"
-SECURITY_GROUP_IDS='["sg-0dbe4ffceac1371e2"]'  # Must be a stringified JSON array
+SECURITY_GROUP_IDS='["sg-0dbe4ffceac1371e2"]'
 ECS_CLUSTER="daister-services-cluster"
 ECS_SERVICE="back-updashboard"
 IAM_ROLE_ARN="arn:aws:iam::585008046531:role/service-role/AWSBackupDefaultServiceRole"
 SECRET_NAME="back-service"
+RESTORE_TIMEOUT_MINUTES=60
 # -------------------------------------------------
 
 # Function: Get latest recovery point
@@ -24,10 +25,10 @@ get_latest_recovery_point() {
         --output text)
 
     if [[ -z "$LATEST_RECOVERY_POINT" || "$LATEST_RECOVERY_POINT" == "None" ]]; then
-        echo "❌ No recovery points found in vault: $BACKUP_VAULT"
+        echo "ERROR: No recovery points found in vault: $BACKUP_VAULT"
         exit 1
     fi
-    echo "✅ Latest Recovery Point: $LATEST_RECOVERY_POINT"
+    echo "Latest Recovery Point: $LATEST_RECOVERY_POINT"
 }
 
 # Function: Check DB identifier availability
@@ -39,10 +40,10 @@ check_db_identifier() {
         --output text || true)
 
     if [[ "$EXISTS" == "$DB_INSTANCE_IDENTIFIER" ]]; then
-        echo "⚠️ DB identifier already exists, appending timestamp."
+        echo "DB identifier already exists. Appending timestamp."
         DB_INSTANCE_IDENTIFIER="${DB_INSTANCE_IDENTIFIER}-$(date +%Y%m%d%H%M)"
     fi
-    echo "✅ Using DB identifier: $DB_INSTANCE_IDENTIFIER"
+    echo "Using DB identifier: $DB_INSTANCE_IDENTIFIER"
 }
 
 # Function: Validate subnet group
@@ -55,16 +56,15 @@ check_subnet_group() {
         --output text 2>/dev/null || true)
 
     if [[ "$EXISTS" != "$DB_SUBNET_GROUP" ]]; then
-        echo "❌ Subnet group '$DB_SUBNET_GROUP' not found in region $AWS_REGION"
+        echo "ERROR: Subnet group '$DB_SUBNET_GROUP' not found in region $AWS_REGION"
         exit 1
     fi
-    echo "✅ Subnet group '$DB_SUBNET_GROUP' exists."
+    echo "Subnet group '$DB_SUBNET_GROUP' exists."
 }
 
 # Function: Start restore job
 start_restore_job() {
     echo "Starting restore job..."
-
     METADATA_JSON=$(jq -n \
         --arg db "$DB_INSTANCE_IDENTIFIER" \
         --arg class "db.t4g.micro" \
@@ -82,31 +82,38 @@ start_restore_job() {
         --query RestoreJobId \
         --output text)
 
-    echo "✅ Restore Job ID: $RESTORE_JOB_ID"
+    echo "Restore Job ID: $RESTORE_JOB_ID"
 }
 
 # Function: Wait for restore job
 wait_for_restore() {
     echo "Waiting for restore job ($RESTORE_JOB_ID) to complete..."
+    END_TIME=$(( $(date +%s) + RESTORE_TIMEOUT_MINUTES*60 ))
     while true; do
         STATUS=$(aws backup list-restore-jobs \
             --region "$AWS_REGION" \
             --query "RestoreJobs[?RestoreJobId=='$RESTORE_JOB_ID'].Status" \
             --output text)
 
-        echo "   Current Restore Status: $STATUS"
+        echo "Current Restore Status: $STATUS"
 
         if [[ "$STATUS" == "COMPLETED" ]]; then
-            echo "✅ Restore completed successfully!"
+            echo "Restore completed successfully!"
             break
         elif [[ "$STATUS" == "FAILED" ]]; then
-            echo "❌ Restore failed. Error details:"
+            echo "Restore failed. Error details:"
             aws backup list-restore-jobs \
                 --region "$AWS_REGION" \
                 --query "RestoreJobs[?RestoreJobId=='$RESTORE_JOB_ID'].[StatusMessage]" \
                 --output text
             exit 1
         fi
+
+        if [[ $(date +%s) -ge $END_TIME ]]; then
+            echo "Restore timed out after $RESTORE_TIMEOUT_MINUTES minutes."
+            exit 1
+        fi
+
         sleep 30
     done
 }
@@ -121,10 +128,10 @@ get_db_endpoint() {
         --output text)
 
     if [[ -z "$DB_ENDPOINT" ]]; then
-        echo "❌ Could not fetch DB endpoint."
+        echo "ERROR: Could not fetch DB endpoint."
         exit 1
     fi
-    echo "✅ DB Endpoint: $DB_ENDPOINT"
+    echo "DB Endpoint: $DB_ENDPOINT"
 }
 
 # Function: Update Secrets Manager with new endpoint
@@ -143,7 +150,7 @@ update_secret() {
         --region "$AWS_REGION" \
         --secret-string "$updated_secret"
 
-    echo "✅ Secret updated successfully"
+    echo "Secret updated successfully"
 }
 
 # Function: Update ECS service to force new deployment
@@ -154,7 +161,7 @@ update_ecs_service() {
         --service "$ECS_SERVICE" \
         --force-new-deployment \
         --region "$AWS_REGION"
-    echo "✅ ECS service updated"
+    echo "ECS service updated"
 }
 
 # ----------------- MAIN PIPELINE -----------------
