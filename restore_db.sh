@@ -135,16 +135,21 @@ get_db_endpoint() {
 }
 
 # Function: Update Secrets Manager with new endpoint
+# Function: Update Secrets Manager with new DB endpoint
 update_secret() {
     echo "Updating Secrets Manager with new DB endpoint..."
+    
+    # Fetch current secret
     current_secret=$(aws secretsmanager get-secret-value \
         --secret-id "$SECRET_NAME" \
         --region "$AWS_REGION" \
         --query SecretString \
         --output text)
 
-    updated_secret=$(echo "$current_secret" | jq --arg host "$DB_ENDPOINT" '.host = $host')
+    # Update the DB_HOST key
+    updated_secret=$(echo "$current_secret" | jq --arg db_host "$DB_ENDPOINT" '.DB_HOST = $db_host')
 
+    # Push updated secret back to Secrets Manager
     aws secretsmanager update-secret \
         --secret-id "$SECRET_NAME" \
         --region "$AWS_REGION" \
