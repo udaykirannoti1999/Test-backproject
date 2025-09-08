@@ -62,25 +62,24 @@ check_subnet_group() {
 
 # Function: Start restore job
 start_restore_job() {
-  echo "Starting restore job..."
-  
-  RESTORE_JOB_ID=$(aws backup start-restore-job \
-    --recovery-point-arn "$LATEST_RECOVERY_POINT" \
-    --metadata "{
-      \"DBInstanceIdentifier\":\"$DB_INSTANCE_IDENTIFIER\",
-      \"DBInstanceClass\":\"db.t4g.micro\",
-      \"DBSubnetGroupName\":\"$DB_SUBNET_GROUP\",
-      \"VpcSecurityGroupIds\":\"$SECURITY_GROUP_IDS\",
-      \"Port\":\"$DB_PORT\",
-      \"PubliclyAccessible\":\"true\"
-    }" \
-    --iam-role-arn "$IAM_ROLE_ARN" \
-    --resource-type RDS \
-    --region "$AWS_REGION" \
-    --query RestoreJobId \
-    --output text)
+    echo "Starting restore job..."
+    
+    RESTORE_JOB_ID=$(aws backup start-restore-job \
+        --recovery-point-arn "$LATEST_RECOVERY_POINT" \
+        --metadata "{
+            \"DBInstanceIdentifier\":\"$DB_INSTANCE_IDENTIFIER\",
+            \"DBInstanceClass\":\"db.t4g.micro\",
+            \"DBSubnetGroupName\":\"$DB_SUBNET_GROUP\",
+            \"VpcSecurityGroupIds\":[\"$SECURITY_GROUP_IDS\"],
+            \"Port\":\"$DB_PORT\"
+        }" \
+        --iam-role-arn "$IAM_ROLE_ARN" \
+        --resource-type RDS \
+        --region "$AWS_REGION" \
+        --query RestoreJobId \
+        --output text)
 
-  echo "✅ Restore Job ID: $RESTORE_JOB_ID"
+    echo "✅ Restore Job ID: $RESTORE_JOB_ID"
 }
 
 # Function: Wait for restore job
