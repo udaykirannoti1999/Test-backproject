@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ----------------- CONFIGURATION -----------------
-DB_INSTANCE_IDENTIFIER="test-upstore"
+DB_INSTANCE_IDENTIFIER="$1"
 SECURITY_GROUP_IDS='["sg-0dbe4ffceac1371e2"]'
 RESTORE_TIMEOUT_MINUTES=60
 # -------------------------------------------------
