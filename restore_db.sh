@@ -157,17 +157,28 @@ update_secret() {
 
     echo "Secret updated successfully"
 }
-
-# Function: Update ECS service to force new deployment
+# Function: Update ECS service with desired count
 update_ecs_service() {
-    echo "Updating ECS service to force new deployment..."
+    echo "Updating ECS service to force new deployment with desired count..."
     aws ecs update-service \
         --cluster "$ECS_CLUSTER" \
         --service "$ECS_SERVICE" \
+        --desired-count 1 \
         --force-new-deployment \
         --region "$AWS_REGION"
-    echo "ECS service updated"
+    echo "✅ ECS service update triggered"
 }
+
+# Function: Wait until ECS service is stable
+wait_for_ecs_service() {
+    echo "Waiting for ECS service to reach a stable state..."
+    aws ecs wait services-stable \
+        --cluster "$ECS_CLUSTER" \
+        --services "$ECS_SERVICE" \
+        --region "$AWS_REGION"
+    echo "✅ ECS service is now stable"
+}
+
 
 # ----------------- MAIN PIPELINE -----------------
 get_latest_recovery_point
@@ -178,4 +189,5 @@ wait_for_restore
 get_db_endpoint
 update_secret
 update_ecs_service
+wait_for_ecs_service
 # -------------------------------------------------
