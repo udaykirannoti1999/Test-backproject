@@ -4,7 +4,7 @@ set -euo pipefail
 # ----------------- CONFIGURATION -----------------
 AWS_REGION="ap-south-2"
 BACKUP_VAULT="rds-dr-vault"
-DB_INSTANCE_IDENTIFIER="back-upstore"
+DB_INSTANCE_IDENTIFIER="test-upstore"
 DB_PORT="3306"
 DB_SUBNET_GROUP="default-vpc-051642d98eff4a857"
 SECURITY_GROUP_IDS='["sg-0dbe4ffceac1371e2"]'
