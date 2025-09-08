@@ -8,7 +8,7 @@ pipeline {
             steps {
                 sh """
                 chmod +x restore_db.sh
-                ./restore_db.sh
+                ./restore_db.sh ${params.DB_INSTANCE_IDENTIFIER}
                 """
             }
         }
