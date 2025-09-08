@@ -45,27 +45,31 @@ check_subnet_group() {
 }
 
 # Start restore job
+# Function: Start restore job
 start_restore_job() {
-  echo "Starting restore job..."
-  RESTORE_JOB_ID=$(aws backup start-restore-job \
-      --recovery-point-arn "$LATEST_RECOVERY_POINT" \
-      --metadata "{
-          \"DBInstanceIdentifier\":\"$DB_INSTANCE_IDENTIFIER\",
-          \"DBInstanceClass\":\"db.t4g.micro\",
-          \"DBSubnetGroupName\":\"$DB_SUBNET_GROUP\",
-          \"VpcSecurityGroupIds\":\"$SECURITY_GROUP_IDS\",
-          \"Port\":\"$DB_PORT\",
-          \"PubliclyAccessible\":\"true\",
-          \"Engine\":\"mysql\"
-      }" \
-      --iam-role-arn "$IAM_ROLE_ARN" \
-      --resource-type RDS \
-      --region "$AWS_REGION" \
-      --query RestoreJobId \
-      --output text)
+    echo "Starting restore job..."
+    
+    # Build metadata JSON safely using jq
+    METADATA_JSON=$(jq -n \
+        --arg db "$DB_INSTANCE_IDENTIFIER" \
+        --arg class "db.t4g.micro" \
+        --arg subnet "$DB_SUBNET_GROUP" \
+        --arg sg "$SECURITY_GROUP_IDS" \
+        --arg port "$DB_PORT" \
+        '{DBInstanceIdentifier:$db, DBInstanceClass:$class, DBSubnetGroupName:$subnet, VpcSecurityGroupIds:$sg, Port:$port, PubliclyAccessible:"true"}')
 
-  echo "✅ Restore Job ID: $RESTORE_JOB_ID"
+    RESTORE_JOB_ID=$(aws backup start-restore-job \
+        --recovery-point-arn "$LATEST_RECOVERY_POINT" \
+        --metadata "$METADATA_JSON" \
+        --iam-role-arn "$IAM_ROLE_ARN" \
+        --resource-type RDS \
+        --region "$AWS_REGION" \
+        --query RestoreJobId \
+        --output text)
+
+    echo "✅ Restore Job ID: $RESTORE_JOB_ID"
 }
+
 
 # Wait for restore job
 wait_for_restore() {
