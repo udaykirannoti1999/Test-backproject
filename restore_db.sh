@@ -2,16 +2,8 @@
 set -euo pipefail
 
 # ----------------- CONFIGURATION -----------------
-AWS_REGION="ap-south-2"
-BACKUP_VAULT="rds-dr-vault"
 DB_INSTANCE_IDENTIFIER="test-upstore"
-DB_PORT="3306"
-DB_SUBNET_GROUP="default-vpc-051642d98eff4a857"
 SECURITY_GROUP_IDS='["sg-0dbe4ffceac1371e2"]'
-ECS_CLUSTER="daister-services-cluster"
-ECS_SERVICE="back-updashboard"
-IAM_ROLE_ARN="arn:aws:iam::585008046531:role/service-role/AWSBackupDefaultServiceRole"
-SECRET_NAME="back-service"
 RESTORE_TIMEOUT_MINUTES=60
 # -------------------------------------------------
 
