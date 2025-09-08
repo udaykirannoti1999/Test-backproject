@@ -13,7 +13,7 @@ ECS_CLUSTER="daister-services-cluster"
 ECS_SERVICE="back-updashboard"
 IAM_ROLE_ARN="arn:aws:iam::585008046531:role/service-role/AWSBackupDefaultServiceRole"
 SECRET_NAME="back-service"   
-Function: Get latest recovery point
+#Function: Get latest recovery point
 get_latest_recovery_point() {
   echo "Fetching latest recovery point..."
   LATEST_RECOVERY_POINT=$(aws backup list-recovery-points-by-backup-vault \
