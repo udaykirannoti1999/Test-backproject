@@ -61,7 +61,7 @@ start_restore_job() {
         --arg db "$DB_INSTANCE_IDENTIFIER" \
         --arg class "db.t4g.micro" \
         --arg subnet "$DB_SUBNET_GROUP" \
-        --argjson sg "[\"$SECURITY_GROUP_ID\"]" \
+        --arg sg "$SECURITY_GROUP_ID" \
         --arg port "$DB_PORT" \
         '{DBInstanceIdentifier:$db, DBInstanceClass:$class, DBSubnetGroupName:$subnet, VpcSecurityGroupIds:$sg, Port:$port, PubliclyAccessible:"true"}')
 
