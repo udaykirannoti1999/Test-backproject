@@ -56,7 +56,6 @@ check_subnet_group() {
     echo "Subnet group '$DB_SUBNET_GROUP' exists."
 }
 
-# Function: Start restore job
 start_restore_job() {
     echo "Starting restore job..."
     METADATA_JSON=$(jq -n \
@@ -78,6 +77,7 @@ start_restore_job() {
 
     echo "Restore Job ID: $RESTORE_JOB_ID"
 }
+
 
 # Function: Wait for restore job
 wait_for_restore() {
