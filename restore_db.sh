@@ -5,6 +5,8 @@ set -euo pipefail
 DB_INSTANCE_IDENTIFIER="$1"
 SECURITY_GROUP_IDS=["sg-0c7ff10ff513eaaf4","sg-0ebf411a4d322834f"]
 RESTORE_TIMEOUT_MINUTES=60
+IAM_ROLE_ARN=arn:aws:iam::585008046531:role/service-role/AWSBackupDefaultServiceRole
+
 # -------------------------------------------------
 
 # Function: Get latest recovery point
