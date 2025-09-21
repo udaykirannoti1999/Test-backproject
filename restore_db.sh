@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ----------------- CONFIGURATION -----------------
 DB_INSTANCE_IDENTIFIER="$1"
-SECURITY_GROUP_IDS=["sg-0c7ff10ff513eaaf4","sg-0ebf411a4d322834f"]
+SECURITY_GROUP_IDS='["sg-0c7ff10ff513eaaf4","sg-0ebf411a4d322834f"]'
 RESTORE_TIMEOUT_MINUTES=60
 
 # -------------------------------------------------
