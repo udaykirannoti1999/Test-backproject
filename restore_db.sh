@@ -1,4 +1,3 @@
-
 #!/bin/bash
 set -euo pipefail
 
@@ -183,7 +182,4 @@ get_db_endpoint
 update_secret
 update_ecs_service
 wait_for_ecs_service
-# -------------------------------------------------
-Restore failed. Error details:
-Bad metadata argument.
-[Pipeline] }
+-------------------------------------------------
